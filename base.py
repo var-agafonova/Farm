@@ -2,43 +2,46 @@ import random
 import math
 
 class animal_const: #константы для подсчета изменения поголовья животных
-    BIRTH_ADULT = 0.4
-    BIRTH_OLD = 0.2
+    BIRTH_ADULT = 0.7
+    BIRTH_OLD = 0.4
     SURVIVAL_YOUNG = 0.9
     DEATH_OLD = 0.3
     ANIMAL_FEED = 100 #необходимый корм взрослому животному на год
+    OLD = 2
+    ADULT = 1
+    YOUNG = 0
     
 
-class animals: 
+class Animals: 
 
     def __init__(self, numbers_of_animals, ava_feed): 
         #количество животных на ферме
         self.number = numbers_of_animals
         #корм необходимый для всех животных фермы
-        self.nec_feed = math.ceil(animal_const.ANIMAL_FEED*(numbers_of_animals[0]//2 + numbers_of_animals[1] + numbers_of_animals[2]//3))
+        self.nec_feed = math.ceil(animal_const.ANIMAL_FEED*(numbers_of_animals[animal_const.YOUNG]//2 + numbers_of_animals[animal_const.ADULT] + numbers_of_animals[animal_const.OLD]//3))
         #доступный корм на ферме
         self.ava_feed = ava_feed 
  
     def adverse_conditions(self): # умирание от неблагоприятных условий
         x = random.randint(5, 20)
-        for i in range(3):
+        for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
             self.number[i] = self.number[i]*(100-x)/100
  
     def feeding(self): # кормление и умирание от нехватки корма
         self.ava_feed -= self.nec_feed
         if self.ava_feed < 0:
             lack = 1-(self.ava_feed/self.nec_feed)
-            for i in range(3):
+            for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
                 self.number[i] *= lack
                 self.number[i] = math.ceil(self.number[i])
             self.ava_feed = 0
             #пересчет необходимого корма для животных
-            self.nec_feed = math.ceil(animal_const.ANIMAL_FEED*(self.number[0]//2 + self.number[1] + self.number[2]//3))
+            self.nec_feed = math.ceil(animal_const.ANIMAL_FEED*(self.number[animal_const.YOUNG]//2 + self.number[animal_const.ADULT] + self.number[animal_const.OLD]//3))
     
     def livestock_growth(self): # рост поголовья
-        self.number[0] = math.ceil(animal_const.BIRTH_ADULT*self.number[1] + animal_const.BIRTH_OLD*self.number[2])
-        self.number[1] = math.ceil(animal_const.SURVIVAL_YOUNG*self.number[0])
-        self.number[2] = math.ceil(self.number[1] + (1-animal_const.DEATH_OLD)*self.number[2])
+        self.number[animal_const.YOUNG] = math.ceil(animal_const.BIRTH_ADULT*self.number[1] + animal_const.BIRTH_OLD*self.number[2])
+        self.number[animal_const.ADULT] = math.ceil(animal_const.SURVIVAL_YOUNG*self.number[0])
+        self.number[animal_const.OLD] = math.ceil(self.number[1] + (1-animal_const.DEATH_OLD)*self.number[2])
         self.nec_feed = math.ceil(animal_const.ANIMAL_FEED*(self.number[0]//2 + self.number[1] + self.number[2]//3))
 
     def print_details(self):
@@ -47,7 +50,7 @@ class animals:
         details += "\nКорм в наличии: " + str(math.ceil(self.ava_feed))
         return details
     
-class contract:
+class Contract:
     def __init__(self, remaining_period_r = 0, feed_number_r = 0, feed_price_r = 0, sold_animals_number_r = [0,0,0], sold_animals_price_r = [0,0,0], forfeit_r = 0):
         self.remaining_period = remaining_period_r
         self.sold_animals_number = sold_animals_number_r
@@ -58,7 +61,7 @@ class contract:
     
     def update(self): #ежегодное обновление данных онтракта
         self.remaining_period -= 1
-        for i in range(3): #рост стоимости животных
+        for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]: #рост стоимости животных
             self.sold_animals_price[i] *= 1.1
             self.sold_animals_price[i] = math.ceil(self.sold_animals_price[i])
 
@@ -68,24 +71,24 @@ class contract:
         details += "\nЦена животных при продаже:" + ' '.join(map(str, self.sold_animals_price))
         return details
     
-class farm: 
-    def __init__(self, contr = contract(), bank=0, numbers_of_animals=[0,0,0], ava_feed=0):
+class Farm: 
+    def __init__(self, contr = Contract(), bank=0, numbers_of_animals=[0,0,0], ava_feed=0):
         self.contract = contr
-        self.animals = animals(numbers_of_animals, ava_feed)
+        self.animals = Animals(numbers_of_animals, ava_feed)
         self.money_capital = bank #денежный капитал фермы
         self.total_capital = bank #общий капитал фермы, включающий животных по цене указанной в контракте
-        for i in range(3):
+        for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
             self.total_capital += contr.sold_animals_price[i]*numbers_of_animals[i]
     
     def animals_sale(self):
         if len([0 for i,j in zip(self.animals.number, self.contract.sold_animals_number) if i>=j]) == 3:
-            self.animals.number[0] -= self.contract.sold_animals_number[0]
-            self.animals.number[1] -= self.contract.sold_animals_number[1]
-            self.animals.number[2] -= self.contract.sold_animals_number[2]
-            for i in range(3):
+            self.animals.number[animal_const.YOUNG] -= self.contract.sold_animals_number[animal_const.YOUNG]
+            self.animals.number[animal_const.ADULT] -= self.contract.sold_animals_number[animal_const.ADULT]
+            self.animals.number[animal_const.OLD] -= self.contract.sold_animals_number[animal_const.OLD]
+            for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
                 self.money_capital += self.contract.sold_animals_price[i]*self.contract.sold_animals_number[i]
         else:
-            for i in range(3):
+            for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
                 self.animals.number[i] = max(0,self.animals.number[i]-self.contract.sold_animals_number[i])
                 self.money_capital += self.contract.sold_animals_price[i]*min(self.animals.number[i],self.contract.sold_animals_number[i])
                 self.money_capital -= self.contract.forfeit*(self.contract.sold_animals_number[i]-min(self.animals.number[i],self.contract.sold_animals_number[i]))
@@ -110,7 +113,7 @@ class farm:
 
     def capital_update(self):
         self.total_capital = self.money_capital
-        for i in range(3):
+        for i in [animal_const.YOUNG,animal_const.ADULT,animal_const.OLD]:
             self.total_capital += self.contract.sold_animals_price[i]*self.animals.number[i]
 
     def bankruptcy(self):
@@ -127,18 +130,17 @@ class farm:
         details += self.animals.print_details()
         return details
 
-class external_world: # внешний мир
-    farm
+class ExternalWorld: # внешний мир
+    Farm
     outstring = ""
     begin = True
     
     #считывание данных фермы и контракта
     def reading(self,money,animal_n,feed,remaining_period,feed_number,feed_price,sold_animals_number,sold_animals_price,forfeit):
         bank = int(money)
-        number_of_animals = list(animal_n.split(' '))
-        number_of_animals = list(map(int,number_of_animals))
+        number_of_animals = list(map(int,animal_n))
         ava_feed = int(feed)
-        self.farm = farm(self.create_contract(remaining_period,feed_number,feed_price,sold_animals_number,sold_animals_price,forfeit), bank, number_of_animals, ava_feed)
+        self.farm = Farm(self.create_contract(remaining_period,feed_number,feed_price,sold_animals_number,sold_animals_price,forfeit), bank, number_of_animals, ava_feed)
     
     def click_button_step(self,money,animal_n,feed,remaining_period,feed_number,feed_price,sold_animals_number,sold_animals_price,forfeit):
         if self.begin:
@@ -184,12 +186,10 @@ class external_world: # внешний мир
         remaining_period = int(remaining_period)
         feed_number = int(feed_number)
         feed_price = int(feed_price)
-        sold_animals_number = list(sold_animals_number.split(" "))
         sold_animals_number = list(map(int,sold_animals_number))
-        sold_animals_price = list(sold_animals_price.split(" "))
         sold_animals_price = list(map(int,sold_animals_price))
         forfeit = int(forfeit)
-        return contract(remaining_period, feed_number, feed_price, sold_animals_number, sold_animals_price, forfeit)
+        return Contract(remaining_period, feed_number, feed_price, sold_animals_number, sold_animals_price, forfeit)
 
     def print_details(self):
         details = ""
